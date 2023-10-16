@@ -11,8 +11,29 @@ create and store their projects.
 
 The target demographic of this app would be songwriters, poets, and song producers. All of these people will need a pad to write down their thoughts in a manner designed for their artistic and creative thought. This is where NicoStudio comes in
 
+## Features
+- Create & edit lyric files
+- Organize lyric files into projects
+- Full functioning Tasklist
+- Search through the lyric files by Title
 
+#### HomeScreen
+The index screen of the app. This screen shows 5 cards. Two cards for pinning a song, one for the task list, and final two for the most recently created songs. This is paired with navigation bar that let's users travel between the three main screens: Home, Project, and Songs, along with a create screen that provides options to create a song or a project.
+
+#### Projects
+The projects screen contains cards of every project created in alphabetical order. Tapping on a project opens the screen to what the object contains. The way projects are structured are objects of objects, as opposed to an array of objects, as that would be ideal for a cloud-based approach eventually.
+
+#### Song Lyrics
+This is where the songs are displayed through a flat list. Songs can either be independent objects or a part of a project object. These files can also be edited and deleted as the user chooses.
 
 Watch video demo below
 
+## Releases
+#### 0.9.0 (Download) (Initial Release)
+
+#### 1.0.0 (Download)
+Changelog:
+- Projects feature is functional again. Create projects and add song lyrics to them.
+
+#### Video Demo of App Below (0.9.0)
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/9BfGS0LCPtk/0.jpg)](https://www.youtube.com/watch?v=9BfGS0LCPtk)
