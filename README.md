@@ -1,4 +1,5 @@
 # Nico Studios
+#### Mobile Application developed using React Native & JavaScript
 
 Nico Studio is an application specifically designed for songwriters. This app is designed to help musicians write songs on their mobile devices. Ever since Apple revolutionized the iPhone and iOS, followed by Google's take on it with Android, many artists have gone from creating songs in notebooks to writing songs on their phones. The amount of artists making the switch is growing by the day. Most note applications are intended to quickly jot down notes, tasks, or a grocery list, but not to the extent that an artist desires to organize their discographies. Lyrics written months ago are lost deep into the application's hells, requiring hours to find unless a specific line is searched for; if even the artist remembers a line since they write too frequently to remember everything. This app will concentrate on providing musicians with a space to write without the distractions of a standard notes app or any shopping lists written in between song
 files.
@@ -10,7 +11,7 @@ create and store their projects.
 
 The target demographic of this app would be songwriters, poets, and song producers. All of these people will need a pad to write down their thoughts in a manner designed for their artistic and creative thought. This is where NicoStudio comes in
 
-# Mobile Application developed using React Native & JavaScript
+
 
 Watch video demo below
 
