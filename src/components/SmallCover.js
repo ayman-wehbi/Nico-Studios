@@ -3,9 +3,6 @@ import { Text, StyleSheet, View, Image } from 'react-native';
 
 
 const ImageDetail = (props) => {
-
-     console.log(props);
-
     return (
         <View> 
              <Image style={styles.img} source={props.imgSrc} />

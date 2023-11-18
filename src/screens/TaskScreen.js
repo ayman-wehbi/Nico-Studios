@@ -4,7 +4,7 @@ import { CheckBox } from 'react-native-elements';
 import { AsyncStorage } from 'react-native';
 import Tasks from '../components/Tasks';
 
-const TaskListApp = () => {
+const TaskListScreen = () => {
   const [task, setTask] = useState('');
   const [tasks, setTasks] = useState([]);
 
@@ -103,7 +103,7 @@ const TaskListApp = () => {
     </View>
   );
 };
-export default TaskListApp;
+export default TaskListScreen;
 
   const styles = StyleSheet.create({
     container: {

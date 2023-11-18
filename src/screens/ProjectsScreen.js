@@ -4,6 +4,8 @@ import SmallCover from "../components/SmallCover"
 import CardProject from "../components/CardProject"
 import Navigation from '../components/Navigation';
 
+//IN THE WORKS
+
 const ProjectPage = (props) => {
     return<View style={styles.contentContainer}>
             <ScrollView>

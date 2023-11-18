@@ -2,9 +2,6 @@ import React from 'react';
 import {StyleSheet, View} from 'react-native';
 
 export default function Card(props){
-
-    console.log(props)
-
     return (
         <View style={styles.card}>
             <View style={styles.cardCon}>
@@ -27,16 +24,10 @@ const styles = StyleSheet.create({
             marginVertical: 6,
             height:120,
             width: 180,
-         
-            
-            
-          
-
 	},
     cardCon: {
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: '25%',
-
     },
 })

@@ -2,9 +2,6 @@ import React from 'react';
 import {View, StyleSheet, Pressable, Text} from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-
-
-
 const Navigation = (props) => {
     return <View style={styles.container}>
 
@@ -30,7 +27,6 @@ const styles=StyleSheet.create({
         backgroundColor: "#face88", 
         justifyContent: "center"
     },
-    
     texts: {
         fontSize: 25,
         alignSelf: 'center'
@@ -38,7 +34,6 @@ const styles=StyleSheet.create({
     container:{
         flexDirection:'row',
         alignContent: 'center',
-    
     },
 });
 

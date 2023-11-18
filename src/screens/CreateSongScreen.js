@@ -1,139 +1,123 @@
-import React, { useContext } from 'react';
-import { useState, useEffect } from 'react';
-import { Text, StyleSheet, View, TextInput, Pressable, Button} from 'react-native';
-import {Context} from "../context/NoteContext"
+import React, { useState, useEffect, useContext } from 'react';
+import { Text, StyleSheet, View, TextInput, Pressable } from 'react-native';
 import { AsyncStorage } from 'react-native';
+import { Context } from "../context/NoteContext";
+
+//tHIS SCREEN IS NOT OF USE ANYMORE
+//IT IS STORE FOR COMPONENT USE AND LEGACY
 
 const CreateScreen = (props) => {
-
+  // State variables
   const [title, setTitle] = useState("");
   const [titles, setTitles] = useState([]);
-  const {addSong} = useContext(Context);
+  const { addSong } = useContext(Context);
 
+  // useEffect to save data to AsyncStorage when 'titles' state changes
   useEffect(() => {
     const saveData = async () => {
       try {
-        // Save the song data using AsyncStorage
         const songData = JSON.stringify(titles);
-        await AsyncStorage.setItem('songData',songData);
+        await AsyncStorage.setItem('songData', songData);
       } catch (error) {
         console.error('Error saving data:', error);
       }
-    }; saveData();
-  }, [titles])
+    };
+    saveData();
+  }, [titles]);
 
-  const addFile = () => {
+  // Function to add a new song
+  const addFile = async () => {
     if (title.trim() !== '') {
-      // Generate a unique ID for the song
       const id = Date.now().toString();
-      // Add the song to the titles state
-      setTitles([...titles, { id, title }]);
-      // Log the ID and title
-      console.log(`Added Song - ID: ${id}, Title: ${title}`);
+      const newSong = { id, title };
+      
+      // Update state with the new song
+      setTitles([...titles, newSong]);
       setTitle('');
+
+      try {
+        // Retrieve existing songs from AsyncStorage
+        const storedSongs = await AsyncStorage.getItem('storedSongs');
+        const existingSongs = storedSongs ? JSON.parse(storedSongs) : [];
+        
+        // Update the list of songs and save back to AsyncStorage
+        const updatedSongs = [...existingSongs, newSong];
+        await AsyncStorage.setItem('storedSongs', JSON.stringify(updatedSongs));
+      } catch (error) {
+        console.error('Error saving song to AsyncStorage:', error);
+      }
+
+      // Navigate to the SongScreen with the created song's ID
+      props.navigation.navigate('SongScreen', { id });
     }
   };
-  
 
-  return <View style={style.viewStyle}>
-
-    <View style={style.buttons}>
-        <Pressable style={style.cancel}>
-          <Text style={style.textCancel} onPress={() => props.navigation.goBack()}>Cancel</Text>
+  // Render component
+  return (
+    <View style={styles.container}>
+      {/* Buttons for cancel and create */}
+      <View style={styles.buttons}>
+        <Pressable style={styles.cancelButton}>
+          <Text style={styles.cancelButtonText} onPress={() => props.navigation.goBack()}>Cancel</Text>
         </Pressable>
-       
-        <Pressable title="Add" style={style.create} onPress={() => {addFile(title);
-                                                                    addSong(title) ;
-                                                                    props.navigation.navigate("SongList"); }}>
+        <Pressable title="Add" style={styles.createButton} onPress={addFile}>
           <Text>Create</Text>
-        </Pressable>       
-    </View> 
-    <Text>{"\n"}</Text>
-    
-    <TextInput  placeholder="Song name" placeholderTextColor={'grey'} style = {style.input} value={title} onChangeText={(text) => setTitle(text)}/>
-
-    
-
-  </View>
+        </Pressable>
+      </View>
+      <Text>{"\n"}</Text>
+      {/* Input for song name */}
+      <TextInput 
+        placeholder="Song name" 
+        placeholderTextColor={'grey'} 
+        style={styles.input} 
+        value={titles} 
+        onChangeText={(text) => setTitle(text)} 
+      />
+    </View>
+  );
 };
 
-const style = StyleSheet.create({
-  viewStyle: {
-    
+// Stylesheet
+const styles = StyleSheet.create({
+  container: {
     flex: 1,
     backgroundColor: "#0f0f0f"
   },
 
-  textLables:{
-    fontSize: 18,
-    
+  buttons: {
+    flexDirection: 'row',
   },
 
-  textGenre:{
-    fontSize: 18,
-    marginTop: 5
-  },
-
-  textDate:{
-    fontSize: 18,
-    marginLeft: 220,
-    top: 158,
-    marginTop: 5
-  },
-
-  inputGenre: {
-    borderColor: 'black',
-    borderBottomWidth: 5,
-    width: 150,
-    marginTop: 4,
-    left: 4
-  },
-
-  cancel: {
+  cancelButton: {
     alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 10,
-        marginTop: 2,
-        marginLeft: 15,
+    justifyContent: 'center',
+    paddingVertical: 10,
+    marginTop: 2,
+    marginLeft: 15,
   },
 
-  create: {
+  createButton: {
     alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 10,
-        marginTop: 2,
-        borderRadius: 9,
-        marginLeft: "58%",
-        elevation: 3,
-        width: 100,
-        backgroundColor: '#FF45C9',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    marginTop: 2,
+    borderRadius: 9,
+    marginLeft: "58%",
+    elevation: 3,
+    width: 100,
+    backgroundColor: '#FF45C9',
   },
 
-  textCreate: {
-    top: 10,
-    fontSize: 18,
-    borderWidth: 3,
-    borderColor: 'black',
-    alignSelf: 'flex-end',
-    marginLeft: 247,
-    right: 20
-  },
-
-  textCancel:{
+  cancelButtonText: {
     color: 'white'
   },
 
   input: {
     borderColor: 'white',
-    borderBottomWidth :1,
+    borderBottomWidth: 1,
     margin: 10,
     color: "white",
   },
-
-  buttons: {
-    flexDirection:'row',
-  }
-
 });
 
 export default CreateScreen;

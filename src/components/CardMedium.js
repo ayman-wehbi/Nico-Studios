@@ -2,9 +2,6 @@ import React from 'react';
 import { StyleSheet, View} from 'react-native';
 
 export default function CardBig(props){
-
-    console.log(props)
-
     return (
         <View style={styles.card}>
             <View style={styles.cardContent}>
@@ -31,6 +28,5 @@ const styles = StyleSheet.create({
         marginLeft: 50,
         alignItems: 'center',
         justifyContent: 'center'
-
     }
 })

@@ -1,50 +1,49 @@
-import React, { useContext } from 'react';
-import { useState, useEffect } from 'react';
-import { Text, StyleSheet, View, TextInput, Pressable, Button} from 'react-native';
-import {Context} from "../context/NoteContext"
-import CardCreate from '../components/CardCreate';
+import React from 'react';
+import { Text, StyleSheet, View, Pressable } from 'react-native';
 import { AsyncStorage } from 'react-native';
+import { Context } from "../context/NoteContext";
+import CardCreate from '../components/CardCreate';
 
 const CreateScreen = (props) => {
-
-  return <View style={style.viewStyle}>
-
-    <View style={style.buttons}>
-        <Pressable onPress={() => {props.navigation.navigate("CreateSongScreen")}}>
-          <CardCreate >
-            <Text style={style.text}>Create Song</Text>
+  // Render component
+  return (
+    <View style={styles.viewStyle}>
+      <View style={styles.buttons}>
+        {/* Navigate to CreateSongScreen when "Create Song" card is pressed */}
+        <Pressable onPress={() => { props.navigation.navigate("CreateSongScreen") }}>
+          <CardCreate>
+            <Text style={styles.text}>Create Song</Text>
           </CardCreate>
         </Pressable>
-       
-        <Pressable onPress={() => {props.navigation.navigate("CreateSongScreen")}}>
-          <CardCreate>
-          <Text style={style.text}>Create Project</Text>
-          </CardCreate>
-        </Pressable>       
-    </View> 
-    
 
-  </View>
+        {/* Navigate to CreateProjectScreen when "Create Project" card is pressed */}
+        <Pressable onPress={() => { props.navigation.navigate("CreateProjectScreen") }}>
+          <CardCreate>
+            <Text style={styles.text}>Create Project</Text>
+          </CardCreate>
+        </Pressable>
+      </View>
+    </View>
+  );
 };
 
-const style = StyleSheet.create({
+// Stylesheet
+const styles = StyleSheet.create({
   viewStyle: {
-    
     flex: 1,
     backgroundColor: "#0f0f0f"
   },
 
-  textLables:{
+  textLables: {
     fontSize: 18,
-    
   },
 
-  textGenre:{
+  textGenre: {
     fontSize: 18,
     marginTop: 5
   },
 
-  textDate:{
+  textDate: {
     fontSize: 18,
     marginLeft: 220,
     top: 158,
@@ -59,8 +58,6 @@ const style = StyleSheet.create({
     left: 4
   },
 
-
-
   textCreate: {
     top: 10,
     fontSize: 18,
@@ -74,9 +71,7 @@ const style = StyleSheet.create({
   text: {
     fontSize: 50,
     alignSelf: 'center'
-    
   }
-
 });
 
 export default CreateScreen;

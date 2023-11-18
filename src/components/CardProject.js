@@ -2,9 +2,6 @@ import React from 'react';
 import { StyleSheet, View} from 'react-native';
 
 export default function CardBig(props){
-
-    console.log(props)
-
     return (
         <View style={styles.card}>
             <View tyle={styles.view}>
@@ -15,8 +12,6 @@ export default function CardBig(props){
         </View>
     );
 }
-
-
 const styles = StyleSheet.create({
 	card: {
             borderRadius: 5,
@@ -30,16 +25,12 @@ const styles = StyleSheet.create({
             marginVertical: 8,
             height:190,
             width: 170,
-
 	},
     cardCon: {
         alignItems: 'center',
         justifyContent: 'center'
-
     },
     view:{
         marginLeft: 20,
-
     }
-    
 })

@@ -4,7 +4,6 @@ import { View, Text, StyleSheet } from 'react-native';
 const Tasks = ({ tasks }) => {
   return (
     <View style={styles.container}>
-     
       <View >
         {tasks.map((task, index) => (
           <View key={index} style={styles.taskItem}>
@@ -19,14 +18,9 @@ const Tasks = ({ tasks }) => {
 };
 
 const styles = StyleSheet.create({
-  
-  
-  
   taskItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    
-    
     paddingVertical: 5,
   },
   taskText: {
