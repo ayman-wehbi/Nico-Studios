@@ -1,5 +1,5 @@
 # Nico Studios
-#### Mobile Application developed using React Native & JavaScript
+#### Mobile Application developed using React Native
 
 Nico Studio is an application specifically designed for songwriters. This app is designed to help musicians write songs on their mobile devices. Ever since Apple revolutionized the iPhone and iOS, followed by Google's take on it with Android, many artists have gone from creating songs in notebooks to writing songs on their phones. The amount of artists making the switch is growing by the day. Most note applications are intended to quickly jot down notes, tasks, or a grocery list, but not to the extent that an artist desires to organize their discographies. Lyrics written months ago are lost deep into the application's hells, requiring hours to find unless a specific line is searched for; if even the artist remembers a line since they write too frequently to remember everything. This app will concentrate on providing musicians with a space to write without the distractions of a standard notes app or any shopping lists written in between song
 files.
@@ -18,7 +18,7 @@ The target demographic of this app would be songwriters, poets, and song produce
 - Search through the lyric files by Title
 
 #### HomeScreen
-The index screen of the app. This screen shows 5 cards. Two cards for pinning a song, one for the task list, and final two for the most recently created songs. This is paired with navigation bar that let's users travel between the three main screens: Home, Project, and Songs, along with a create screen that provides options to create a song or a project.
+The index screen of the app. This screen shows 5 cards. Two cards for pinning a song, one for the task list, and final two for the most recently created songs. This is paired with a navigation bar that lets users travel between the three main screens: Home, Project, and Songs, along with a Create screen that provides options to create a song or a project.
 
 #### Projects
 The projects screen contains cards of every project created in alphabetical order. Tapping on a project opens the screen to what the object contains. The way projects are structured are objects of objects, as opposed to an array of objects, as that would be ideal for a cloud-based approach eventually.
@@ -26,12 +26,12 @@ The projects screen contains cards of every project created in alphabetical orde
 #### Song Lyrics
 This is where the songs are displayed through a flat list. Songs can either be independent objects or a part of a project object. These files can also be edited and deleted as the user chooses.
 
-Watch video demo below
+Watch the video demo below
 
 ## Releases
-#### 0.9.0 (Download) (Initial Release)
+#### 0.9.0 ([DOWNLOAD](https://mega.nz/file/u6I03aYA#HNyxJSekoQo3SXVF-gU4HdPQkG_dTl7okv5e4xPB3ZA)) (Initial Release 11/20/2023)
 
-#### 1.0.0 (Download)
+#### 1.0.0 (coming 11/25/2023)
 Changelog:
 - Projects feature is functional again. Create projects and add song lyrics to them.
 
