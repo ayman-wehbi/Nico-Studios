@@ -31,9 +31,14 @@ Watch the video demo below
 ## Releases
 #### 0.9.0 ([DOWNLOAD](https://mega.nz/file/u6I03aYA#HNyxJSekoQo3SXVF-gU4HdPQkG_dTl7okv5e4xPB3ZA)) (Initial Release 11/20/2023)
 
-#### 1.0.0 (coming 11/25/2023)
+#### 1.0.1 ([DOWNLOAD](https://mega.nz/file/H7YCAYbS#oTEtvaK3l9dDAl2_MXUhW5ztE619cgk5gq-G9ocYXXE))
 Changelog:
-- Projects feature is functional again. Create projects and add song lyrics to them.
+- Improved animations
+- Improved overall user experience
+- deleting projects now works
+
+Known bugs:
+- Issues with project state when creating after deleting, & adding songs after creating. A restart after deletion/creation works for now
 
 #### Video Demo of App Below (0.9.0)
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/9BfGS0LCPtk/0.jpg)](https://www.youtube.com/watch?v=9BfGS0LCPtk)
