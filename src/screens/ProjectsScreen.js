@@ -1,106 +1,512 @@
-import React from 'react';
-import { Text, StyleSheet ,View, Pressable, ScrollView} from 'react-native';
-import SmallCover from "../components/SmallCover"
-import CardProject from "../components/CardProject"
+import React, { useContext, useState, useEffect, useLayoutEffect } from 'react';
+import { Alert, Text, StyleSheet, View, Pressable, ScrollView, TextInput, RefreshControl, Modal, TouchableOpacity } from 'react-native';
+import { Context } from '../context/NoteContext';
+import { useFocusEffect } from '@react-navigation/native';
 import Navigation from '../components/Navigation';
-
-//IN THE WORKS
+import CardProject from '../components/CardProject';
+import { StatusBar } from 'react-native';
+import { AsyncStorage } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const ProjectPage = (props) => {
-    return<View style={styles.contentContainer}>
-            <ScrollView>
-                <Text style={styles.title}> 
-                    Projects (Sample)
-                </Text>
-                        <View style={styles.viewCards}>
-                            <CardProject>
-                                <SmallCover  imgSrc={require("../assets/album.jpg")} title={"The Marshall Mather LP"}/>
-                            </CardProject>
-                                
-                            <CardProject>
-                                <SmallCover  imgSrc={require("../assets/taboo.jpg")} title={"TA13OO"}/>
-                            </CardProject>
-                            
-                        </View>
+  const { state, addProject, deleteProject, dispatch } = useContext(Context);
+  const [newProjectTitle, setNewProjectTitle] = useState('');
+  const [savedProjects, setSavedProjects] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isInfoButtonModalVisible, setIsInfoButtonModalVisible] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isInfoModalVisible, setIsInfoModalVisible] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [editedProjectTitle, setEditedProjectTitle] = useState('');
+  const navigation = useNavigation();
 
-                        <View style={styles.viewCards}>
-                            <CardProject>
-                                <SmallCover  imgSrc={require("../assets/gkmc.jpg")} title={"good kid maad city "}/>
-                            </CardProject>
-                            
-                            <CardProject>
-                                <SmallCover  imgSrc={require("../assets/tpab.webp")} title={"To Pimp a Butterfly "}/>
-                            </CardProject>
-                            
-                        </View>
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await renderProjects(); 
+    setRefreshing(false);
+  };
 
-                        <View style={styles.viewCards}>
-                            <CardProject>
-                                <SmallCover  imgSrc={require("../assets/mme.webp")} title={"Melt My Eyez"}/>
-                            </CardProject>
+  const getStatusBarStyle = () => {
+    if (isModalVisible || isInfoModalVisible || isInfoButtonModalVisible) {
+      // When any modal is visible, dim the status bar by setting a semi-transparent black background
+      return { backgroundColor: '#4b3d29' };
+    }
+    // When no modal is visible, set the status bar to its default appearance
+    return { backgroundColor: '#face88', barStyle: 'dark-content' };
+  };
+  
+  const renderProjects = () => {
+  
+    if (savedProjects.length === 0) {
+      return <View style={styles.emptyMessageContainer}><Text style={styles.emptyMessageText}>Create Some Projects to Organize Your Work!</Text></View>;
+    }
+  
+    return savedProjects.map((project) => (
+      <CardProject
+        key={project.id.toString()}
+        title={project.name}
+        onPress={() => props.navigation.navigate('ProjectDetails', { id: project.id })}
+        onDelete={() => handleDeleteProject(project.id)}
+        onInfoPress={() => showInfoModal(project)}
+      />
+    ));
+  };
+  
+  const saveProjects = async (projects) => {
+    try {
+      // Parallelize AsyncStorage.setItem calls using Promise.all
+      await Promise.all(
+        projects.map(async (project) => {
+          const key = `project_${project.id}`;
+          console.log("Attempting to save project:", project);
+          await AsyncStorage.setItem(key, JSON.stringify({ id: project.id, name: project.name, createdDate: project.createdDate,  songs: project.songs || [] }));
 
-                            <CardProject>       
-                                <SmallCover  imgSrc={require("../assets/blond.jpeg")} title={"Blond"}/>
-                            </CardProject>
-                            
-                        </View>
 
-                        <View style={styles.viewCards}>
-                            <CardProject>
-                                <SmallCover  imgSrc={require("../assets/tos.webp")} title={"The Off Season"}/>
-                            </CardProject>
+           const readBack = await AsyncStorage.getItem(key);
+           console.log("Read back project:", JSON.parse(readBack));
+        })
+      );
+  
+      // Use a single AsyncStorage.multiGet to fetch all updated project data
+      const updatedProjectsData = await AsyncStorage.multiGet(projects.map((project) => `project_${project.id}`));
+  
+      // Parse and format the updated project data
+      const updatedProjects = updatedProjectsData.map(([key, value]) => {
+        const projectObject = JSON.parse(value);
+        const projectId = key.replace('project_', '');
+        return { id: projectId, ...projectObject };
+      });
+  
+      // Update the state with the updated projects
+      setSavedProjects(updatedProjects);
+      //console.log('SAVED projects:', updatedProjects);
+    } catch (error) {
+      //console.error('Error saving projects:', error);
+    }
+  };
 
-                            <CardProject>
-                                <SmallCover  imgSrc={require("../assets/dielit.webp")} title={"Die Lit"}/>
-                            </CardProject>
-                            
-                        </View>
-            </ScrollView>
-                    <View>
-                    <Pressable style={styles.button} android_ripple={{ color: 'black', }} onPress={() => {props.navigation.navigate("CreateScreen")}
-                                                                                                    }
-                    >
-                    <Text>Create</Text>
-                    </Pressable>
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <>
+          {/* Existing buttons or components */}
+          <TouchableOpacity onPress={() => setIsInfoButtonModalVisible(true)} style={styles.infobuttonContainer}>
+            <MaterialCommunityIcons name="information" size={26} color="#0f0f0f" style={styles.infoButton}/>
+          </TouchableOpacity>
+        </>
+      ),
+    });
+  }, [navigation, setIsInfoButtonModalVisible]);
+  
+  useEffect(() => {
+    if (state.projects !== savedProjects) {
+      setSavedProjects(state.projects);
+    }
+  }, [state.projects]);
+
+  useEffect(() => {
+    const saveProjectsToAsyncStorage = async () => {
+      try {
+        await saveProjects(state.projects);
+        await loadAndRenderProjects(); 
+      } catch (error) {
+        console.error('Error saving projects to AsyncStorage:', error);
+      }
+    };
+  
+    if (state.projects.length > 0) {
+      saveProjectsToAsyncStorage();
+    }
+  }, [state.projects]); // This useEffect runs every time the projects in state change
+ 
+  const loadAndRenderProjects = async () => {
+    try {
+      // Get all keys from AsyncStorage
+      const keys = await AsyncStorage.getAllKeys();
+  
+      // Filter for project keys only
+      const projectKeys = keys.filter((key) => key.startsWith('project_'));
+  
+      // Fetch project data
+      const projectData = await AsyncStorage.multiGet(projectKeys);
+  
+      // Parse and format project data
+      const parsedProjects = projectData.map(([key, value]) => {
+        const projectObject = JSON.parse(value);
+        const projectId = key.replace('project_', '');
+        return { id: projectId, ...projectObject };
+      });
+  
+      //console.log('ArraySize', parsedProjects.length);
+      //console.log('loadAndRenderProjects CALLED');
+      console.log('Parsed Projects:', parsedProjects);
+      parsedProjects.sort((a, b) => a.name.localeCompare(b.name));
+  
+      // Update state with parsed projects
+      setSavedProjects(parsedProjects);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    }
+  };
+  
+  // Call loadAndRenderProjects on component mount
+  useEffect(() => {
+      loadAndRenderProjects();
+    console.log('ArraySize', savedProjects.length);
+
+  }, []);
+  
+    useFocusEffect(
+    React.useCallback(() => {
+      loadAndRenderProjects();
+    }, [])
+  );
+  
+  const handleCreateProject = () => {
+    if (newProjectTitle) {
+      const createdDate = new Date().toLocaleDateString("en-US");
+
+      addProject(newProjectTitle, createdDate);
+      setNewProjectTitle(''); // Clear the input field
+      setIsModalVisible(false); // Close the modal
+    }
+  };
+  
+  const handleDeleteProject = async (projectId) => {
+    try {
+      const key = `project_${projectId}`;
+      await AsyncStorage.removeItem(key);  // Remove from AsyncStorage
+      console.log('Project deleted:', projectId);
+  
+      // Filter out the deleted project from the savedProjects state
+      const updatedProjects = savedProjects.filter(project => project.id !== projectId);
+      setSavedProjects(updatedProjects);  // Update the state to re-render the UI
+    } catch (error) {
+      console.error('Error deleting project:', error);
+    }
+  };
+  
+  const showInfoModal = (project) => {
+    setSelectedProject(project);
+    setEditedProjectTitle(project.name);
+    setIsInfoModalVisible(true);
+  };
+  
+  const closeInfoModal = () => {
+    setIsInfoModalVisible(false);
+  };
+
+  const restartApp = () => {
+    RNRestart.Restart();
+  };
+
+  return (
+    <View style={styles.contentContainer}>
+       <StatusBar backgroundColor={getStatusBarStyle().backgroundColor} />
+
+      <ScrollView
+        contentContainerStyle={savedProjects.length === 0 ? styles.scrollViewEmpty : {}}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#0f0f0f"]} progressBackgroundColor="#FF45C9" />}
+      >
+        {renderProjects()}
+      </ScrollView>
+        <View>
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={isModalVisible}
+            onRequestClose={() => {
+              setIsModalVisible(!isModalVisible);
+            }}
+          >
+            <View style={styles.overlay} />
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Project Title"
+                  value={newProjectTitle}
+                  onChangeText={setNewProjectTitle}
+                />
+                <View style={styles.separator} />
+                <Pressable
+                  style={styles.buttonCreateModal}
+                  android_ripple={{ color: 'black' }}
+                  onPress={() => {
+                    handleCreateProject();
+                  }}
+                >
+                  <Text style={styles.textStyle}>Create Project</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={isInfoModalVisible}
+            onRequestClose={closeInfoModal}
+            
+          >
+            <View style={styles.centeredView}>
+              <View style={styles.modalViewInfo}>
+              <Text style={styles.projectTitle}>{selectedProject?.name}</Text>
+
+          {/* Separator View */}
+          <View style={styles.separator} />
+
+                <Text>Created {selectedProject?.createdDate}</Text>
+                <Text>{selectedProject?.songs.length} Song(s)</Text>
+
+              </View>
+            </View>
+          </Modal>
+
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={isInfoButtonModalVisible}
+            onRequestClose={() => {
+              setIsInfoButtonModalVisible(!isInfoButtonModalVisible);
+            }}
+          >  
+            <View style={styles.overlay} />
+            <View style={styles.centeredView}>
+              <View style={styles.modalViewInfoBar}>
+                <Text style={styles.modalTitle}>Adding Songs to Projects</Text>
+                <View style={styles.separator} />
+                <Text style={styles.modalText}>Apologies for the inconvenience. Please restart the application after creating a new project to add songs to said project.</Text>
+                <View style={styles.separator} />
+                <View style={styles.buttonContainer}>
+                  <Pressable
+                    style={[styles.button, styles.buttonClose]} 
+                    onPress={() => setIsInfoButtonModalVisible(false)}
+                  >
+                    <Text style={styles.infoModalText}>Okay</Text>
+                  </Pressable>
                 </View>
+              </View>
+            </View>
+          </Modal>
 
-                <Navigation Style={styles.navigation} navigation={props.navigation}/>
+
+
+
+          <Pressable
+            style={styles.createButton}
+            onPress={() => setIsModalVisible(true)}
+            android_ripple={{ color: 'black' }}
+          >
+            <MaterialCommunityIcons name="layers" size={16} color="black" />
+            <Text style={styles.createButtonText}> Create Project</Text>
+          </Pressable>
         </View>
-              
-           
+      <Navigation navigation={props.navigation} button1Style={{fontWeight: "bold", fontSize:30, }} />
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    Text: {fontSize: 60,
-    },
-    contentContainer: {
-        flex: 1, // pushes the footer to the end of the screen
-        backgroundColor: "#0f0f0f"
-    },
-    viewCards: {
-        flexDirection:'row',
-        marginLeft: 10,
-    
-  
-    },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: '#0f0f0f',
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    margin: 10,
+    padding: 10,
+    color: 'white',
+  },
+  button2: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    marginLeft: 200,
+    bottom: -30,
+    borderRadius: 12,
+    elevation: 3,
+    width: 150,
+    backgroundColor: '#FF45C3',
+    position: 'absolute',
+  },
+  createButton: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    borderRadius: 11,
+    elevation: 3,
+    width: 120,
+    height: 60,
+    backgroundColor: '#f754c8',
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+  },
+  createButtonText:{
+    fontWeight:"bold",
 
-    button: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 20,
-        marginLeft: 220,
-        bottom: 10,
-        borderRadius: 12,
-        elevation: 3,
-        width: 150,
-        backgroundColor: '#FF45C9',
-        position: 'absolute',
+  },
+  title: {
+    fontSize: 30,
+    textAlign: 'center',
+    marginTop: 6,
+    color: '#ffd9e3',
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 22,
+  },
+  modalView: {
+    backgroundColor: "#ffd9e3",
+    borderRadius: 7,
+    paddingTop: 10,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
     },
-    title: {
-        fontSize: 30,
-        textAlign: 'center',
-        marginTop: 6,
-        color:  '#ffd9e3',
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalViewInfo: {
+    backgroundColor: "#ffd9e5",
+    borderRadius: 8,
+    width: "65%",
+    padding: 10,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
     },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    height: 110,
+  },
+  modalInput: {
+    height: 25,
+    borderColor: 'black',
+    borderBottomWidth: 1,  
+    width: 230,  
+    marginBottom: 20,
+    marginTop: 10,
+    color: 'black',  
+    paddingLeft: 4, 
+  },
+  buttonClose: {
+    backgroundColor: "#ffd9e3",
+    padding: 10,
+    paddingHorizontal: 90,
+    width: '100%', 
+    borderRadius: 8, 
+  },
+  infoModalText: {
+    color: "black",
+    textAlign: "center",
+    fontWeight: "bold",
+    marginHorizontal:5,
+  },
+  separator: {
+    height: 0.4, 
+    backgroundColor: '#000000', 
+    width: 290,  
+    alignSelf: 'center', 
+  },
+  projectTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  emptyMessageContainer: {
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    padding: 7,
+  },
+  emptyMessageText: {
+    fontSize: 30, 
+    color: "white",
+    textAlign: 'center', 
+    padding: 7,
+    color: "rgba(255, 217, 227, 0.4)",
+  },
+  scrollViewEmpty: {
+    flex: 1,
+  },
+
+  button: {
+    borderRadius: 20,
+    flex: 1, 
+  },
+
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+
+  modalText: {
+    marginBottom: 10,
+    textAlign: 'center',
+    marginTop: 5,
+    margin:5,
+  },
+  modalTitle:{
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  infobuttonContainer:{
+    marginRight: 15,
+  },
+  modalViewInfoBar: {
+    backgroundColor: "#ffd9e3",
+    borderRadius: 7,
+    paddingTop: 10,
+    alignItems: "center",
+    shadowColor: "#000",
+    width: "80%",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  buttonCreateModal:{
+    width: "100%",
+    padding:10,
+  },
+  textStyle:{
+    width:"100%",
+    marginHorizontal: "29%",
+  }
 });
+
 export default ProjectPage;

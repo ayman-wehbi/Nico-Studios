@@ -2,29 +2,45 @@ import React from 'react';
 import {View, StyleSheet, Pressable, Text} from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const Navigation = (props) => {
-    return <View style={styles.container}>
+const Navigation = ({ navigation, button2Style, button1Style }) => {
+    return (
+        <View style={styles.container}>
+            <Pressable 
+                style={[styles.button1, button1Style]}
+                android_ripple={{ color: 'black', }}
+                onPress={() => { navigation.navigate("Projects") }}
+            >
+                <MaterialCommunityIcons 
+                    style={[styles.texts, button1Style]}
+                    name="album"  
+                />
+            </Pressable>
 
-        <Pressable style={styles.button} android_ripple={{ color: 'black', }}onPress={() => {props.navigation.navigate("Home")}}>
-            <MaterialCommunityIcons style={styles.texts}name="home"  />
-        </Pressable>
-
-        <Pressable style={styles.button} android_ripple={{ color: 'black', }}onPress={() => {props.navigation.navigate("Projects")}}>
-            <MaterialCommunityIcons style={styles.texts}name="album"  />
-        </Pressable>
-
-        <Pressable style={styles.button} android_ripple={{ color: 'black', }}onPress={() => {props.navigation.navigate("SongList")}}>
-            <MaterialCommunityIcons style={styles.texts}name="format-list-bulleted"  />
-        </Pressable>
-
-    </View>
-}
+            <Pressable 
+                style={[styles.button2, button2Style]} // Apply the external style here
+                android_ripple={{ color: 'black', }}
+                onPress={() => { navigation.navigate("SongList") }}
+            >
+                <MaterialCommunityIcons 
+                    style={[styles.texts, button2Style]} // Apply the external text style here
+                    name="format-list-bulleted"  
+                />
+            </Pressable>
+        </View>
+    );
+};
 
 const styles=StyleSheet.create({
-    button: {
-        width: 130, 
-        height: 55,
-        backgroundColor: "#face88", 
+    button1: {
+        width: "50%", 
+        height: 50,
+        backgroundColor: "#face88", // alternative #ecc062
+        justifyContent: "center"
+    },
+    button2: {
+        width: "50%", 
+        height: 50,
+        backgroundColor: "#face88", // alternative #ecc062
         justifyContent: "center"
     },
     texts: {

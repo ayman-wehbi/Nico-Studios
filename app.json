@@ -1,16 +1,12 @@
 {
   "expo": {
-    "name": "project",
+    "name": "Nico Studios",
     "slug": "project",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+    "userInterfaceStyle": "dark",
+   
     "updates": {
       "fallbackToCacheTimeout": 0
     },
@@ -22,12 +18,18 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+      
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.nicosocials.ns"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+ 
+    },
+    "extra": {
+      "eas": {
+        "projectId": "50867282-4f4a-4025-8537-ed8e82e5c6e7"
+      }
     }
   }
 }
