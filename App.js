@@ -6,6 +6,7 @@ import Settings from './src/screens/SettingsScreen';
 import Projects from './src/screens/ProjectsScreen';
 import SongScreen from './src/screens/SongScreen';
 import SongList from './src/screens/SongList';
+import LoginScreen from './src/screens/LoginScreen.js';
 import CreateScreen from './src/screens/CreateScreen';
 import CreateSongScreen from './src/screens/CreateSongScreen';
 import EditScreen from './src/screens/EditScreen';
@@ -32,7 +33,7 @@ const App = () => {
         <StatusBar backgroundColor="#face88" barStyle="dark-content" />
         <Toast ref={(ref) => Toast.setRef(ref)} />
         <Stack.Navigator
-          initialRouteName="SongList"
+          initialRouteName="LoginScreen"
           screenOptions={{
             headerTitle: 'Nico Studios',
             cardStyleInterpolator: ({ current, layouts }) => {
@@ -55,8 +56,7 @@ const App = () => {
             },
             headerStyle: {
               backgroundColor: '#face88',
-              borderBottomWidth: 0, // Removes the line
-              shadowOpacity: 0, // Removes shadow for iOS
+              borderBottomWidth: 0, 
               elevation: 0,
             },
           }}
@@ -70,6 +70,7 @@ const App = () => {
           <Stack.Screen name="CreateSongScreen" component={CreateSongScreen} />
           <Stack.Screen name="CreateScreen" component={CreateScreen} />
           <Stack.Screen name="ProjectsScreen" component={ProjectsScreen} />
+          <Stack.Screen name="LoginScreen" component={LoginScreen}options={{ headerShown: false }} />
           <Stack.Screen name="ProjectDetails" component={ProjectDetails} options={{ headerTitle: 'Project Details' }} />
         </Stack.Navigator>
       </NavigationContainer>
