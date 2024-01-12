@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, TextInput, Pressable, Text, StyleSheet } from 'react-native';
 import * as Font from 'expo-font';
 import AppLoading from 'expo-app-loading';
+import { auth } from './firebase'; // Adjust the path as necessary
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 const fetchFonts = () => {
     return Font.loadAsync({
@@ -28,12 +30,33 @@ const LoginScreen = () => {
 
 
     const handleSignIn = () => {
-        // To be done
+        signInWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                // Signed in 
+                var user = userCredential.user;
+                // Navigate to next screen
+            })
+            .catch((error) => {
+                var errorCode = error.code;
+                var errorMessage = error.message;
+                // .. Handle errors here, like wrong password or user not found
+            });
     };
+    
 
     const handleSignUp = () => {
-        // To be done
+        createUserWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                // Signed in 
+                var user = userCredential.user;
+                //Navigate to next screen
+            })
+            .catch((error) => {
+                var errorCode = error.code;
+                var errorMessage = error.message;
+            });
     };
+    
 
     return (
         <View style={styles.container}>
@@ -91,7 +114,7 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 20,
         color: '#f754c8',
-        marginLeft: 5,
+        marginLeft: 5, // Adjust as needed
         fontFamily: "Cursives",
     },
     loginContainer: {
