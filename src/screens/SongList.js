@@ -22,6 +22,8 @@ import { AsyncStorage } from 'react-native';
 import { Animated } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Toast from 'react-native-toast-message';
+import { firestore } from '../../firebase'; 
+import { collection, writeBatch, doc } from 'firebase/firestore';
 
 const SongList = (props) => {
   // Extract necessary props and context using destructuring
@@ -59,6 +61,15 @@ const SongList = (props) => {
   const [selectedSongId, setSelectedSongId] = useState(null);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
 
+  const handleUploadSongs = async () => {
+    try {
+      const allSongs = await getAllSongs(); // Fetch all songs
+      await uploadSongsToFirestore(allSongs); // Upload songs to Firestore
+    } catch (error) {
+      console.error('Error during song upload:', error);
+    }
+  };
+
   // Fetch and load songs on component mount
   useEffect(() => {
     loadSongs();
@@ -78,6 +89,31 @@ const SongList = (props) => {
     };
     load();
   }, []); 
+
+  const uploadSongsToFirestore = async (songs) => {
+    // Reference to the 'songs' collection
+    const songsCollectionRef = collection(firestore, 'songs');
+
+    // Create a new write batch
+    const batch = writeBatch(firestore);
+
+    songs.forEach(song => {
+        // Reference to a new document in the 'songs' collection
+        const songDocRef = doc(songsCollectionRef, song.id);
+        // Add a set operation to the batch
+        batch.set(songDocRef, song);
+    });
+
+    try {
+        // Commit the batch
+        await batch.commit();
+        console.log('Songs uploaded to Firestore successfully!');
+    } catch (error) {
+        console.error('Error uploading songs to Firestore:', error);
+    }
+};
+
+  
 
   console.log('Loaded projects after adding new one:', projects);
 
@@ -202,6 +238,8 @@ const SongList = (props) => {
         untitledCount += 1;
         return `Untitled ${String(untitledCount).padStart(2, '0')}`; // Formats as Untitled 01, Untitled 02, ...
       };
+
+      //await uploadSongsToFirestore(allSongs);
   
       // Rename untitled songs
       const renamedSongs = allSongs.map((song) => {
@@ -501,7 +539,7 @@ const SongList = (props) => {
       </Modal>
 
       <View>
-        <Pressable style={styles.button2} android_ripple={{ color: 'black' }} onPress={addFile}>
+        <Pressable style={styles.button2} android_ripple={{ color: 'black' }} onPress={addFile} onLongPress={handleUploadSongs}>
           <MaterialCommunityIcons name="pencil" size={16} color="black" />
           <Text style={styles.createButtonText}> Create Song</Text>
         </Pressable>
