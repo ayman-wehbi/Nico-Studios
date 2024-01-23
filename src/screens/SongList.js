@@ -23,7 +23,8 @@ import { Animated } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Toast from 'react-native-toast-message';
 import { firestore } from '../../firebase'; 
-import { collection, writeBatch, doc } from 'firebase/firestore';
+import { collection, writeBatch, doc, getDocs} from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 const SongList = (props) => {
   // Extract necessary props and context using destructuring
@@ -73,12 +74,14 @@ const SongList = (props) => {
   // Fetch and load songs on component mount
   useEffect(() => {
     loadSongs();
+    fetchAndStoreUserSongs();
   }, []);
 
   // Fetch and load songs when the screen gains focus
   useFocusEffect(
     React.useCallback(() => {
       loadSongs();
+      fetchAndStoreUserSongs();
     }, [])
   );
 
@@ -91,36 +94,93 @@ const SongList = (props) => {
   }, []); 
 
   const uploadSongsToFirestore = async (songs) => {
-    // Reference to the 'songs' collection
-    const songsCollectionRef = collection(firestore, 'songs');
+    const auth = getAuth(); // Initialize Firebase Authentication
+    const user = auth.currentUser; // Get the currently logged-in user
 
-    // Create a new write batch
+    if (!user) {
+      console.error('No user logged in');
+      return;
+    }
+
+    const userSongsCollectionRef = collection(firestore, 'users', user.uid, 'songs');
     const batch = writeBatch(firestore);
 
     songs.forEach(song => {
-        // Reference to a new document in the 'songs' collection
-        const songDocRef = doc(songsCollectionRef, song.id);
-        // Add a set operation to the batch
-        batch.set(songDocRef, song);
+        // Use the song's ID as the document ID in Firestore
+        const songDocRef = doc(userSongsCollectionRef, song.id);
+        batch.set(songDocRef, song); // This will overwrite the song if it already exists
     });
 
     try {
-        // Commit the batch
         await batch.commit();
-        console.log('Songs uploaded to Firestore successfully!');
+        console.log('Songs uploaded/updated in Firestore successfully!');
     } catch (error) {
-        console.error('Error uploading songs to Firestore:', error);
+        console.error('Error uploading/updating songs to Firestore:', error);
     }
+  };
+
+  // Function to fetch songs from Firestore and update AsyncStorage
+// Function to fetch songs from Firestore and update AsyncStorage
+const fetchAndStoreUserSongs = async () => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user) {
+    console.error('No user logged in');
+    return;
+  }
+
+  try {
+    const userSongsCollectionRef = collection(firestore, 'users', user.uid, 'songs');
+    const querySnapshot = await getDocs(userSongsCollectionRef);
+    const fetchedSongs = [];
+
+    querySnapshot.forEach((doc) => {
+      fetchedSongs.push({ id: doc.id, ...doc.data() });
+    });
+
+    // Update AsyncStorage and State
+    await updateAsyncStorageWithFetchedSongs(fetchedSongs);
+  } catch (error) {
+    console.error('Error fetching songs from Firestore:', error);
+  }
 };
+
+// Function to update AsyncStorage with fetched songs and update state
+const updateAsyncStorageWithFetchedSongs = async (fetchedSongs) => {
+  try {
+    const storedSongsString = await AsyncStorage.getItem('storedSongs');
+    let storedSongs = storedSongsString ? JSON.parse(storedSongsString) : [];
+
+    const storedSongsMap = new Map(storedSongs.map(song => [song.id, song]));
+
+    fetchedSongs.forEach(fetchedSong => {
+      if (!storedSongsMap.has(fetchedSong.id)) {
+        storedSongs.push(fetchedSong);
+      }
+    });
+
+    await AsyncStorage.setItem('storedSongs', JSON.stringify(storedSongs));
+    
+    // Update state to reflect the new list of songs
+    setSongs(storedSongs);
+  } catch (error) {
+    console.error('Error updating AsyncStorage with fetched songs:', error);
+  }
+};
+
+
+
+
 
   
 
   console.log('Loaded projects after adding new one:', projects);
-
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     try {
       await loadSongs(); // Load or reload your songs
+      fetchAndStoreUserSongs();
       await loadProjectsFromAsyncStorage(); // Load or reload your projects
     } catch (error) {
       console.error('Error refreshing songs and projects:', error);
@@ -136,8 +196,8 @@ const SongList = (props) => {
   };
 
   // Function to filter songs based on the search query
-  const filteredSongs = songs.filter(song =>
-    song.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredSongs = songs.filter(song => 
+    typeof song.title === 'string' && song.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Function to animate the search bar
@@ -226,6 +286,24 @@ const SongList = (props) => {
       return [];
     }
   };
+
+  const getUnuploadedSongs = async () => {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const songKeys = keys.filter((key) => key.startsWith('song_'));
+      const songs = await AsyncStorage.multiGet(songKeys);
+      return songs.map(([key, value]) => {
+        const songData = JSON.parse(value);
+        if (songData.uploaded) {
+          return null;
+        }
+        return { id: key.replace('song_', ''), ...songData };
+      }).filter(song => song !== null);
+    } catch (error) {
+      console.error('Error getting unuploaded songs:', error);
+      return [];
+    }
+};
 
   // Function to load songs to be rendered through the state
   const loadSongs = async () => {
