@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, Pressable, Text, StyleSheet } from 'react-native';
 import * as Font from 'expo-font';
 import AppLoading from 'expo-app-loading';
-import { auth } from './firebase'; // Adjust the path as necessary
+import { auth } from '../../firebase'; // Adjust the path as necessary
+import { useNavigation} from '@react-navigation/native'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 const fetchFonts = () => {
+    
     return Font.loadAsync({
       'Lemon': require('../assets/fonts/Lemon-Regular.ttf'),
       'Cursives': require('../assets/fonts/CedarvilleCursive-Regular.ttf'),
@@ -13,28 +15,30 @@ const fetchFonts = () => {
   };
   
 
-const LoginScreen = () => {
+const LoginScreen = (props) => {
+
+    const navigation = useNavigation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [fontLoaded, setFontLoaded] = useState(false);
 
-    if (!fontLoaded) {
-        return (
-        <AppLoading
-            startAsync={fetchFonts}
-            onFinish={() => setFontLoaded(true)}
-            onError={console.warn}
-        />
-        );
-    }
+
+    useEffect ( ( ) => {
+        const unsubscribe = auth.onAuthStateChanged (user => {
+        if (user) {
+        navigation.navigate("Projects")
+        }})
+        return unsubscribe
+        }, [])
 
 
     const handleSignIn = () => {
         signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 // Signed in 
-                var user = userCredential.user;
-                // Navigate to next screen
+                const user = userCredential.user;
+                console.log(user.email)
+                 navigation.navigate("Projects");
             })
             .catch((error) => {
                 var errorCode = error.code;
@@ -45,18 +49,28 @@ const LoginScreen = () => {
     
 
     const handleSignUp = () => {
-        createUserWithEmailAndPassword(auth, email, password)
+            createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 // Signed in 
-                var user = userCredential.user;
-                //Navigate to next screen
+                const user = userCredential.user;
+                console.log(user.email)
+                navigation.navigate("Projects")
             })
             .catch((error) => {
-                var errorCode = error.code;
-                var errorMessage = error.message;
+                console.log(error)
             });
     };
     
+    if (!fontLoaded) {
+        return (
+        <AppLoading
+            startAsync={fetchFonts}
+            onFinish={() => setFontLoaded(true)}
+            onError={console.warn}
+        />
+        );
+    }
+
 
     return (
         <View style={styles.container}>
@@ -145,6 +159,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
     }
 });
+
+export default LoginScreen;
+
+
 
 export default LoginScreen;
 
