@@ -24,7 +24,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import Toast from 'react-native-toast-message';
 import { firestore } from '../../firebase'; 
 import { collection, writeBatch, doc, getDocs} from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getAuth, signOut } from 'firebase/auth';
 
 const SongList = (props) => {
   // Extract necessary props and context using destructuring
@@ -72,16 +72,16 @@ const SongList = (props) => {
   };
 
   // Fetch and load songs on component mount
-  useEffect(() => {
-    loadSongs();
-    fetchAndStoreUserSongs();
-  }, []);
+
 
   // Fetch and load songs when the screen gains focus
   useFocusEffect(
     React.useCallback(() => {
-      loadSongs();
-      fetchAndStoreUserSongs();
+      const fetchDataAndLoad = async () => {
+        await loadSongs();
+      };
+    
+      fetchDataAndLoad();
     }, [])
   );
 
@@ -119,68 +119,54 @@ const SongList = (props) => {
     }
   };
 
+
   // Function to fetch songs from Firestore and update AsyncStorage
-// Function to fetch songs from Firestore and update AsyncStorage
-const fetchAndStoreUserSongs = async () => {
-  const auth = getAuth();
-  const user = auth.currentUser;
-
-  if (!user) {
-    console.error('No user logged in');
-    return;
-  }
-
-  try {
-    const userSongsCollectionRef = collection(firestore, 'users', user.uid, 'songs');
-    const querySnapshot = await getDocs(userSongsCollectionRef);
-    const fetchedSongs = [];
-
-    querySnapshot.forEach((doc) => {
-      fetchedSongs.push({ id: doc.id, ...doc.data() });
-    });
-
-    // Update AsyncStorage and State
-    await updateAsyncStorageWithFetchedSongs(fetchedSongs);
-  } catch (error) {
-    console.error('Error fetching songs from Firestore:', error);
-  }
-};
-
-// Function to update AsyncStorage with fetched songs and update state
-const updateAsyncStorageWithFetchedSongs = async (fetchedSongs) => {
-  try {
-    const storedSongsString = await AsyncStorage.getItem('storedSongs');
-    let storedSongs = storedSongsString ? JSON.parse(storedSongsString) : [];
-
-    const storedSongsMap = new Map(storedSongs.map(song => [song.id, song]));
-
-    fetchedSongs.forEach(fetchedSong => {
-      if (!storedSongsMap.has(fetchedSong.id)) {
-        storedSongs.push(fetchedSong);
+  const fetchAndStoreUserSongs = async () => {
+    try {
+      const auth = getAuth(); 
+      const user = auth.currentUser; 
+  
+      if (!user) {
+        console.error('No user logged in');
+        return;
       }
-    });
+  
+      const userSongsCollectionRef = collection(firestore, 'users', user.uid, 'songs');
+      const querySnapshot = await getDocs(userSongsCollectionRef);
+  
+      const fetchedSongs = [];
+      querySnapshot.forEach((doc) => {
+        fetchedSongs.push({ id: doc.id, ...doc.data() });
+      });
+      console.log("Fetched songs from Firestore:", fetchedSongs);  
+  
+      const storedSongsJSON = await AsyncStorage.getItem('storedSongs');
+      const existingSongs = storedSongsJSON ? JSON.parse(storedSongsJSON) : [];
+  
+      // Filter out duplicates
+      const newSongs = fetchedSongs.filter(fetchedSong => 
+        !existingSongs.some(existingSong => existingSong.id === fetchedSong.id)
+      );
+  
+      // Merge the new songs with the existing songs
+      const combinedSongs = [...existingSongs, ...newSongs];
+      
 
-    await AsyncStorage.setItem('storedSongs', JSON.stringify(storedSongs));
-    
-    // Update state to reflect the new list of songs
-    setSongs(storedSongs);
-  } catch (error) {
-    console.error('Error updating AsyncStorage with fetched songs:', error);
-  }
-};
-
-
-
-
-
+      
+  
+      await AsyncStorage.setItem('storedSongs', JSON.stringify(combinedSongs));
+      setSongs(combinedSongs);
+    } catch (error) {
+      console.error('Error fetching and storing user songs:', error);
+    }
+  };
   
 
   console.log('Loaded projects after adding new one:', projects);
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     try {
-      await loadSongs(); // Load or reload your songs
-      fetchAndStoreUserSongs();
+      loadUnifiedSongs(); // Load or reload your songs
       await loadProjectsFromAsyncStorage(); // Load or reload your projects
     } catch (error) {
       console.error('Error refreshing songs and projects:', error);
@@ -219,6 +205,19 @@ const updateAsyncStorageWithFetchedSongs = async (fetchedSongs) => {
       }
     });
   };
+
+  const handleLogout = async () => {
+    const auth = getAuth();
+    try {
+      await signOut(auth);
+      await AsyncStorage.clear();
+      props.navigation.navigate("LoginScreen")
+      // Additional actions after logout (e.g., navigate to login screen)
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
 
   // useLayoutEffect to dynamically update the header based on search state
   useLayoutEffect(() => {
@@ -274,16 +273,74 @@ const updateAsyncStorageWithFetchedSongs = async (fetchedSongs) => {
   // Function to fetch all songs from AsyncStorage
   const getAllSongs = async () => {
     try {
+      console.log("Getting all songs from both AsyncStorage and Firestore");
+  
+      // Fetch songs from AsyncStorage
+      console.log("Fetching songs from AsyncStorage");
       const keys = await AsyncStorage.getAllKeys();
       const songKeys = keys.filter((key) => key.startsWith('song_'));
-      const songs = await AsyncStorage.multiGet(songKeys);
-      return songs.map(([key, value]) => {
-        const songData = JSON.parse(value);
-        return { id: key.replace('song_', ''), ...songData };
+      const localSongs = await AsyncStorage.multiGet(songKeys);
+      const localSongsFormatted = localSongs.map(([key, value]) => {
+        return { id: key.replace('song_', ''), ...JSON.parse(value) };
       });
+      console.log(`Found ${localSongsFormatted.length} songs in AsyncStorage`);
+  
+      // Fetch songs from Firestore
+      console.log("Fetching songs from Firestore");
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) {
+        console.error('No user logged in');
+        throw new Error('No user logged in');
+      }
+  
+      const userSongsCollectionRef = collection(firestore, 'users', user.uid, 'songs');
+      const querySnapshot = await getDocs(userSongsCollectionRef);
+  
+      const firestoreSongs = [];
+      querySnapshot.forEach((doc) => {
+        firestoreSongs.push({ id: doc.id, ...doc.data() });
+      });
+      console.log(`Found ${firestoreSongs.length} songs in Firestore`);
+      console.log("Songs from Firestore:", firestoreSongs);
+  
+      // Save Firestore songs to AsyncStorage
+      for (const song of firestoreSongs) {
+        const serializedData = JSON.stringify(song);
+        await AsyncStorage.setItem(`song_${song.id}`, serializedData);
+      }
+  
+      // Combine and remove duplicates
+      console.log("Combining and deduplicating songs from AsyncStorage and Firestore");
+      const combinedSongs = [...localSongsFormatted, ...firestoreSongs];
+      const uniqueSongs = Object.values(combinedSongs.reduce((acc, current) => {
+        acc[current.id] = current; // Firestore songs will overwrite local ones if IDs match
+        return acc;
+      }, {}));
+      console.log(`Total unique songs after combining: ${uniqueSongs.length}`);
+      console.log("Unique songs after combining:", uniqueSongs);
+  
+      return uniqueSongs;
     } catch (error) {
       console.error('Error getting all songs:', error);
       return [];
+    }
+  };
+  
+  
+
+  const loadFetchedSongs = async () => {
+    try {
+      const storedSongsJSON = await AsyncStorage.getItem('userSongs');
+      if (storedSongsJSON !== null) {
+        const storedSongs = JSON.parse(storedSongsJSON);
+        // Process the songs as per your requirement
+        setSongs(storedSongs); // Update your state with the loaded songs
+      } else {
+        console.log('No stored songs found');
+      }
+    } catch (error) {
+      console.error('Error loading fetched songs from AsyncStorage:', error);
     }
   };
 
@@ -303,7 +360,7 @@ const updateAsyncStorageWithFetchedSongs = async (fetchedSongs) => {
       console.error('Error getting unuploaded songs:', error);
       return [];
     }
-};
+  };
 
   // Function to load songs to be rendered through the state
   const loadSongs = async () => {
@@ -316,8 +373,6 @@ const updateAsyncStorageWithFetchedSongs = async (fetchedSongs) => {
         untitledCount += 1;
         return `Untitled ${String(untitledCount).padStart(2, '0')}`; // Formats as Untitled 01, Untitled 02, ...
       };
-
-      //await uploadSongsToFirestore(allSongs);
   
       // Rename untitled songs
       const renamedSongs = allSongs.map((song) => {
@@ -532,7 +587,7 @@ const updateAsyncStorageWithFetchedSongs = async (fetchedSongs) => {
               />
               <TouchableOpacity
                 style={styles.cancelButton}
-                onPress={() => setProjectListModalVisible(false)}
+                onPress={handleLogout}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
@@ -607,7 +662,7 @@ const updateAsyncStorageWithFetchedSongs = async (fetchedSongs) => {
 
             <TouchableOpacity
               style={styles.customModalButton}
-              onPress={() => setCustomModalVisible(false)}
+              onPress={handleLogout}
             >
               <MaterialCommunityIcons name="cancel" size={16} color="black" />
               <Text style={styles.customModalButtonText}> Cancel</Text>
