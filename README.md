@@ -37,6 +37,17 @@ Changelog:
 - Improved overall user experience
 - deleting projects now works
 
+#### Version 1.1.1: ([DOWNLOAD](https://drive.google.com/file/d/1IyVio7RHcatCANd1Vnzd5tUVJyu-uXh1/view?usp=sharing))
+
+- Cloud Storage Integration
+ Sync Across Devices: With the introduction of cloud storage via Firebase, your projects and songs are now automatically synchronized across all your devices. Start your creation on your phone and pick up right where you left 
+ off on your tablet or computer—effortlessly.
+- Enhanced User Account Features
+  Create Your Personal Account: Register for a personal account to unlock advanced features. By signing in, you ensure your music projects and compositions are securely backed up and accessible from anywhere, at any time.
+  Seamless Project and Song Management
+- Project and Song Syncing: Your creative process is now more fluid than ever. Save your songs and organize them into projects that reflect your workflow and creative journey. With our latest update, all your work is 
+  synchronized in real-time, ensuring no beat is ever lost.
+
 Known bugs:
 - Issues with project state when creating after deleting, & adding songs after creating. A restart after deletion/creation works for now
 
