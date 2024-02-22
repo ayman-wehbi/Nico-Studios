@@ -29,7 +29,7 @@ This is where the songs are displayed through a flat list. Songs can either be i
 Watch the video demo below
 
 ## Releases
-#### 0.9.0 ([DOWNLOAD](https://mega.nz/file/u6I03aYA#HNyxJSekoQo3SXVF-gU4HdPQkG_dTl7okv5e4xPB3ZA)) (Initial Release 11/20/2023)
+#### 0.9.0 ([DOWNLOAD](https://mega.nz/file/u6I03aYA#HNyxJSekoQo3SXVF-gU4HdPQkG_dTl7okv5e4xPB3ZA)) 
 
 #### 1.0.1 ([DOWNLOAD](https://mega.nz/file/H7YCAYbS#oTEtvaK3l9dDAl2_MXUhW5ztE619cgk5gq-G9ocYXXE))
 Changelog:
