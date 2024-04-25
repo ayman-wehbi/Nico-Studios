@@ -9,8 +9,11 @@ We want users to feel at ease using this app. We want a forward-going design in 
 Artists are often forced to write songs on basic note apps that do not satisfy their needs in terms of appearance, organization, and functionality. We're focusing on creating a simple user interface for writing songs and recording drafts so the artist doesn't forget a melody. Nico Studio will make songwriting more convenient for the artist by maximizing productivity and reducing distractions caused by a crowded UI/UX and the necessity to transfer between apps to use different functions such as a rapid recording and a rhyming dictionary. Nico Studio is intended for songwriters, upcoming and current artists, musicians, and creatives who aspire to easily
 create and store their projects.
 
-The target demographic of this app would be songwriters, poets, and song producers. All of these people will need a pad to write down their thoughts in a manner designed for their artistic and creative thought. This is where NicoStudio comes in
+The target demographic of this app would be songwriters, poets, and song producers. All of these people will need a pad to write down their thoughts in a manner designed for their artistic and creative thought. This is where NicoStudio comes in.
 
+## iNSTALL THE APP FROM THE PLAYSTORE (EARLY ACCESS)
+1. Join this [Google group](https://groups.google.com/g/nicotesting) to be added to the list of testers.
+2. [Become a tester through web](https://play.google.com/apps/testing/com.nicosocials.ns) OR [Install from PlayStore Directly](https://play.google.com/store/apps/details?id=com.nicosocials.ns)
 ## Features
 - Create & edit lyric files
 - Organize lyric files into projects
@@ -50,6 +53,8 @@ Changelog:
 
 Known bugs:
 - Issues with project state when creating after deleting, & adding songs after creating. A restart after deletion/creation works for now
+
+- 
 
 #### Video Demo of App Below (0.9.0)
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/9BfGS0LCPtk/0.jpg)](https://www.youtube.com/watch?v=9BfGS0LCPtk)
