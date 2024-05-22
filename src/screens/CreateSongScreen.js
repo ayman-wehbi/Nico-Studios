@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Text, StyleSheet, View, TextInput, Pressable } from 'react-native';
-import { AsyncStorage } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Context } from "../context/NoteContext";
 
 //tHIS SCREEN IS NOT OF USE ANYMORE

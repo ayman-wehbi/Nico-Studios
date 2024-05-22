@@ -1,8 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Alert, SafeAreaView, View, Text, StyleSheet, TextInput, Pressable, Modal, FlatList, Keyboard,ScrollView } from 'react-native';
-import { AsyncStorage } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Context } from '../context/NoteContext';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { firestore } from '../../firebase'; 
+import { getAuth } from 'firebase/auth';
+import debounce from 'lodash/debounce';
+
+
 
 
 const SongScreen = (props) => {
@@ -25,6 +31,24 @@ const SongScreen = (props) => {
       // Save timeSpent to AsyncStorage or state
     };
   }, []);
+
+  useEffect(() => {
+    console.log("SongScreen mounted with song ID:", thisSong);  // Log the received song ID
+  
+    const loadContent = async () => {
+      const loadedContent = await loadSong(thisSong);
+      if (loadedContent) {
+        setSongState({ title: loadedContent.title, content: loadedContent.content });
+        setTitle(loadedContent.title);
+        setContent(loadedContent.content);
+        console.log("Fetched song data:", loadedContent);  // Log the loaded song data
+      } else {
+        console.log("No song data found for ID:", thisSong);  // Log if no data is found
+      }
+    };
+  
+    loadContent();
+  }, [thisSong]);
 
   // State for song data
   const [songState, setSongState] = useState({
@@ -58,16 +82,31 @@ const SongScreen = (props) => {
   
   // State variables for title, content, and title editing status
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState(songState.content);
+  const [content, setContent] = useState('');
   const [editingTitle, setEditingTitle] = useState(false);
 
   // Function to load song data from AsyncStorage
   const loadSong = async (id) => {
     try {
+      // Try fetching from AsyncStorage first
       const serializedData = await AsyncStorage.getItem(`song_${id}`);
       if (serializedData) {
         const { title, content } = JSON.parse(serializedData);
         return { title, content };
+      } else {
+        // If not in AsyncStorage, fetch from Firestore
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (user) {
+          const songDocRef = doc(firestore, 'users', user.uid, 'songs', id);
+          const docSnapshot = await getDoc(songDocRef);
+          if (docSnapshot.exists()) {
+            console.log('Fetched song from Firestore:', docSnapshot.data());
+            return { ...docSnapshot.data() };
+          } else {
+            console.log('Song not found in Firestore');
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading song:', error);
@@ -85,6 +124,26 @@ const SongScreen = (props) => {
       console.error('Error saving song:', error);
     }
   };
+
+  const saveAndUpdateSong = async (updatedSong) => {
+    try {
+      // Save to AsyncStorage
+      await AsyncStorage.setItem(`song_${updatedSong.id}`, JSON.stringify(updatedSong));
+      console.log('Song saved to AsyncStorage successfully!');
+
+      // Reupload to Firestore
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) throw new Error('No user logged in');
+      const songDocRef = doc(firestore, 'users', user.uid, 'songs', updatedSong.id);
+      await setDoc(songDocRef, updatedSong); // This will overwrite the document in Firestore
+      console.log('Song reuploaded to Firestore successfully!');
+    } catch (error) {
+      console.error('Error saving and reuploading song:', error);
+    }
+  };
+
+  const debouncedSaveAndUpdateSong = debounce(saveAndUpdateSong, 500);
 
   // Function to save song when either the title or content is blurred
   const saveSongOnBlur = () => {
@@ -162,13 +221,13 @@ const SongScreen = (props) => {
   // Function to handle title change
   const handleTitleChange = (newTitle) => {
     setTitle(newTitle);
-    saveSong(thisSong, newTitle.trimEnd(), content);
+    debouncedSaveAndUpdateSong({ id: thisSong, title: newTitle, content });
   };
 
   // Function to handle content change
   const handleContentChange = (newContent) => {
     setContent(newContent);
-    saveSong(thisSong, title, newContent);
+    debouncedSaveAndUpdateSong({ id: thisSong, title, content: newContent });
   };
 
   const checkAndDeleteSong = async () => {

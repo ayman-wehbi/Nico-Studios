@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, Pressable, Modal } from 'react-native';
-import { AsyncStorage } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import CardBig from '../components/SongCard';
 import Navigation from '../components/Navigation';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';

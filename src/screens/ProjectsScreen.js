@@ -5,9 +5,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import Navigation from '../components/Navigation';
 import CardProject from '../components/CardProject';
 import { StatusBar } from 'react-native';
-import { AsyncStorage } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { firestore } from '../../firebase'; 
+import { collection, writeBatch, doc, getDocs } from 'firebase/firestore';
+import { getAuth, signOut } from 'firebase/auth';
 
 const ProjectPage = (props) => {
   const { state, addProject, deleteProject, dispatch } = useContext(Context);
@@ -23,9 +26,26 @@ const ProjectPage = (props) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await renderProjects(); 
+    await renderProjects();
+    handleUploadProjects();
     setRefreshing(false);
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const syncProjects = async () => {
+        const firestoreProjects = await fetchProjectsFromFirestore();
+        const localProjects = await getLocalProjects(); // Assume this function fetches projects from AsyncStorage
+        const mergedProjects = mergeAndDeduplicateProjects(localProjects, firestoreProjects);
+        await saveProjects(mergedProjects); // Save the merged list back to AsyncStorage
+        setSavedProjects(mergedProjects); // Update state to re-render UI
+        await handleUploadProjects();
+      };
+  
+      syncProjects();
+    }, [])
+  );
+  
 
   const getStatusBarStyle = () => {
     if (isModalVisible || isInfoModalVisible || isInfoButtonModalVisible) {
@@ -86,13 +106,64 @@ const ProjectPage = (props) => {
     }
   };
 
+  const fetchProjectsFromFirestore = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+  
+    if (!user) {
+      console.error('No user logged in');
+      return [];
+    }
+  
+    const userProjectsCollectionRef = collection(firestore, 'users', user.uid, 'projects');
+    const querySnapshot = await getDocs(userProjectsCollectionRef);
+  
+    const firestoreProjects = [];
+    querySnapshot.forEach((doc) => {
+      firestoreProjects.push({ id: doc.id, ...doc.data() });
+    });
+  
+    return firestoreProjects;
+  };
+
+  const uploadProjectsToFirestore = async (projects) => {
+    const auth = getAuth(); // Initialize Firebase Authentication
+    const user = auth.currentUser; // Get the currently logged-in user
+
+    if (!user) {
+      console.error('No user logged in');
+      return;
+    }
+
+    // Reference to the user-specific 'songs' collection
+    const userProjectsCollectionRef = collection(firestore, 'users', user.uid, 'projects');
+
+    // Create a new write batch
+    const batch = writeBatch(firestore);
+
+    projects.forEach(project => {
+      // Convert project ID to string if it's not already
+      const projectId = String(project.id);
+      const projectDocRef = doc(userProjectsCollectionRef, projectId);
+      batch.set(projectDocRef, project);
+  });
+
+    try {
+        // Commit the batch
+        await batch.commit();
+        console.log('Songs uploaded to Firestore successfully!');
+    } catch (error) {
+        console.error('Error uploading songs to Firestore:', error);
+    }
+  };
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <>
           {/* Existing buttons or components */}
-          <TouchableOpacity onPress={() => setIsInfoButtonModalVisible(true)} style={styles.infobuttonContainer}>
-            <MaterialCommunityIcons name="information" size={26} color="#0f0f0f" style={styles.infoButton}/>
+          <TouchableOpacity onPress={handleSettingsNav} style={styles.infobuttonContainer}>
+            <MaterialCommunityIcons name="cog" size={26} color="#0f0f0f" style={styles.infoButton}/>
           </TouchableOpacity>
         </>
       ),
@@ -120,7 +191,7 @@ const ProjectPage = (props) => {
     }
   }, [state.projects]); // This useEffect runs every time the projects in state change
  
-  const loadAndRenderProjects = async () => {
+  const loadAndRenderProjectss = async () => {
     try {
       // Get all keys from AsyncStorage
       const keys = await AsyncStorage.getAllKeys();
@@ -149,6 +220,96 @@ const ProjectPage = (props) => {
       console.error('Error loading projects:', error);
     }
   };
+
+  const loadAndRenderProjects = async () => {
+    try {
+      const [localProjects, firestoreProjects] = await Promise.all([getLocalProjects(), fetchProjectsFromFirestore()]);
+      const mergedProjects = mergeAndDeduplicateProjects(localProjects, firestoreProjects);
+  
+      // Save the merged projects back to AsyncStorage
+      await saveProjects(mergedProjects); // Assumes this function updates AsyncStorage with the merged list
+  
+      // Update the state with the merged projects to re-render the UI
+      setSavedProjects(mergedProjects);
+    } catch (error) {
+      console.error('Error loading and rendering projects:', error);
+    }
+  };
+
+  const getLocalProjects = async () => {
+    // Get all keys from AsyncStorage
+    const keys = await AsyncStorage.getAllKeys();
+    const projectKeys = keys.filter(key => key.startsWith('project_'));
+    const projectData = await AsyncStorage.multiGet(projectKeys);
+  
+    return projectData.map(([key, value]) => JSON.parse(value));
+  };
+
+  const mergeAndDeduplicateProjects = (localProjects, firestoreProjects) => {
+    const projectMap = {};
+  
+    // Add or update projects from local storage
+    localProjects.forEach(project => {
+      projectMap[project.id] = project;
+    });
+  
+    // Add or update projects from Firestore, preferring the more recent version
+    firestoreProjects.forEach(firestoreProject => {
+      const localProject = projectMap[firestoreProject.id];
+      if (!localProject || new Date(firestoreProject.lastUpdated) > new Date(localProject.lastUpdated)) {
+        projectMap[firestoreProject.id] = firestoreProject;
+      }
+    });
+  
+    return Object.values(projectMap);
+  };
+  
+  const handleSettingsNav = async () => {
+      props.navigation.navigate("Settings")
+
+
+  };
+
+  const handleUploadProjects = async () => {
+    try {
+      // Fetch all projects
+      const allProjects = await getAllProjects(); 
+      await uploadProjectsToFirestore(allProjects); // Upload projects to Firestore
+      console.log('Porjects uploaded')
+    } catch (error) {
+      console.error('Error during project upload:', error);
+    }
+  };
+  
+  const getAllProjects = async () => {
+    try {
+      // Get all keys from AsyncStorage
+      const keys = await AsyncStorage.getAllKeys();
+  
+      // Filter for project keys only
+      const projectKeys = keys.filter((key) => key.startsWith('project_'));
+  
+      // Fetch project data
+      const projectData = await AsyncStorage.multiGet(projectKeys);
+  
+      // Parse and format project data, excluding already uploaded projects
+      const projects = projectData.map(([key, value]) => {
+        const projectObject = JSON.parse(value);
+        if (projectObject.uploaded) {
+          // Skip this project if it's already uploaded
+          return null;
+        }
+        const projectId = key.replace('project_', '');
+        return { id: projectId, ...projectObject };
+      }).filter(project => project !== null); // Remove null entries
+  
+      return projects;
+    } catch (error) {
+      console.error('Error getting all projects:', error);
+      return [];
+    }
+  };
+  
   
   // Call loadAndRenderProjects on component mount
   useEffect(() => {
@@ -291,12 +452,10 @@ const ProjectPage = (props) => {
             </View>
           </Modal>
 
-
-
-
           <Pressable
             style={styles.createButton}
             onPress={() => setIsModalVisible(true)}
+            onLongPress={handleUploadProjects}
             android_ripple={{ color: 'black' }}
           >
             <MaterialCommunityIcons name="layers" size={16} color="black" />

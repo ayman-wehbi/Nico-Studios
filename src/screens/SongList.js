@@ -18,19 +18,18 @@ import Navigation from '../components/Navigation';
 import { StatusBar } from 'react-native';
 import CardBig from '../components/SongCard';
 import { Context as NoteContext } from '../context/NoteContext';
-import { AsyncStorage } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Animated } from 'react-native';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { firestore } from '../../firebase'; 
-import { collection, writeBatch, doc, getDocs} from 'firebase/firestore';
+import { collection, writeBatch, doc, getDocs, deleteDoc} from 'firebase/firestore';
 import { getAuth, signOut } from 'firebase/auth';
 
 const SongList = (props) => {
   // Extract necessary props and context using destructuring
   const { navigation } = props;
   const { state, deleteSongById} = useContext(NoteContext);
-
 
   // Define component's state variables
   const [title, setTitle] = useState([]); // Initialize with an empty array
@@ -78,12 +77,16 @@ const SongList = (props) => {
   useFocusEffect(
     React.useCallback(() => {
       const fetchDataAndLoad = async () => {
-        await loadSongs();
+        await loadSongs(); // Load songs from AsyncStorage or Firestore
+  
+        const allSongs = await getAllSongs(); // Assuming this function fetches all local and Firestore songs, deduplicates them, and updates local storage if needed
+        await uploadSongsToFirestore(allSongs); // Upload the deduplicated list of songs back to Firestore
       };
-    
+  
       fetchDataAndLoad();
     }, [])
   );
+  
 
   useEffect(() => {
     const load = async () => {
@@ -166,8 +169,7 @@ const SongList = (props) => {
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     try {
-      loadUnifiedSongs(); // Load or reload your songs
-      await loadProjectsFromAsyncStorage(); // Load or reload your projects
+      loadProjectsFromAsyncStorage(); // Load or reload your projects
     } catch (error) {
       console.error('Error refreshing songs and projects:', error);
     } finally {
@@ -393,12 +395,35 @@ const SongList = (props) => {
     }
   };
 
-  // Function to handle the delete action
   const handleDelete = async (id) => {
     // Show confirmation alert or directly delete
-    await AsyncStorage.removeItem(`song_${id}`);
-    loadSongs(); 
+    try {
+      // Remove from AsyncStorage
+      await AsyncStorage.removeItem(`song_${id}`);
+      console.log(`Song ${id} deleted from AsyncStorage`);
+  
+      // Get current user
+      const auth = getAuth();
+      const user = auth.currentUser;
+  
+      if (user) {
+        // Path to the song's document in Firestore
+        const songDocRef = doc(firestore, 'users', user.uid, 'songs', id);
+  
+        // Delete from Firestore
+        await deleteDoc(songDocRef);
+        console.log(`Song ${id} deleted from Firestore`);
+      } else {
+        console.error('No user logged in');
+      }
+  
+      // Refresh the songs list to reflect the deletion
+      await loadSongs();
+    } catch (error) {
+      console.error('Error deleting song:', error);
+    }
   };
+  
 
   // Function to show options when a song is long-pressed
   const showOptions = (id) => {
@@ -587,7 +612,7 @@ const SongList = (props) => {
               />
               <TouchableOpacity
                 style={styles.cancelButton}
-                onPress={handleLogout}
+                onPress={() => setProjectListModalVisible(false)} 
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
@@ -662,7 +687,7 @@ const SongList = (props) => {
 
             <TouchableOpacity
               style={styles.customModalButton}
-              onPress={handleLogout}
+              onPress={() => setCustomModalVisible(false)} 
             >
               <MaterialCommunityIcons name="cancel" size={16} color="black" />
               <Text style={styles.customModalButtonText}> Cancel</Text>

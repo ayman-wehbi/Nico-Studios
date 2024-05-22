@@ -9,7 +9,7 @@ import {
 import Navigation from '../components/Navigation';
 import Card from '../components/Card';
 import CardBig from '../components/CardBig';
-import { AsyncStorage } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Context as NoteContext, setRecentlyEdited } from '../context/NoteContext';
 
 const HomeScreen = (props) => {

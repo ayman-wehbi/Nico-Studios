@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, StyleSheet, View, Pressable } from 'react-native';
-import { AsyncStorage } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Context } from "../context/NoteContext";
 import CardCreate from '../components/CardCreate';
 
