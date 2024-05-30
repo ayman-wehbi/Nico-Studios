@@ -12,8 +12,8 @@ create and store their projects.
 The target demographic of this app would be songwriters, poets, and song producers. All of these people will need a pad to write down their thoughts in a manner designed for their artistic and creative thought. This is where NicoStudio comes in.
 
 ## iNSTALL THE APP FROM THE PLAYSTORE (EARLY ACCESS)
-1. Join this [Google group](https://groups.google.com/g/nicotesting) to be added to the list of testers.
-2. [Become a tester through web](https://play.google.com/apps/testing/com.nicosocials.ns) OR [Install from PlayStore Directly](https://play.google.com/store/apps/details?id=com.nicosocials.ns)
+[PlayStore](https://play.google.com/store/apps/details?id=com.nicosocials.ns)
+
 ## Features
 - Create & edit lyric files
 - Organize lyric files into projects
